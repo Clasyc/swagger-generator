@@ -1,4 +1,7 @@
 services:
     clasyc.generator:
         class: Clasyc\Bundle\SwaggerGeneratorBundle\Services\Generator
-        arguments: ['']
+        arguments: ['', '@kernel', '@clasyc.finder']
+    clasyc.finder:
+        class: Clasyc\Bundle\SwaggerGeneratorBundle\Services\DirectoryFinder
+        arguments: []

@@ -30,6 +30,6 @@ class GenerationCommand extends ContainerAwareCommand
         ]);
 
         $generator = $this->getContainer()->get('clasyc.generator');
-        $generator->test();
+        $generator->findBundleDirectory();
     }
 }
