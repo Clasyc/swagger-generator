@@ -1,0 +1,4 @@
+services:
+    clasyc.generator:
+        class: Clasyc\Bundle\SwaggerGeneratorBundle\Services\Generator
+        arguments: ['']
