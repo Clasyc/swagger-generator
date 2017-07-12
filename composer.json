@@ -1,0 +1,35 @@
+{
+  "name" : "clasyc/swagger-generator",
+  "description" : "Generates controllers, actions and routes based on swagger definition paths.",
+  "type" : "symfony-bundle",
+  "authors" : [{
+    "name" : "Deividas Pekunas",
+    "email" : "deividas.pekunas@gmail.com"
+  }],
+  "keywords" : [
+    "swagger generator"
+  ],
+  "license" : [
+    "MIT"
+  ],
+  "require" : {
+    "nette/php-generator": "3.0"
+  },
+  "autoload" : {
+    "psr-4": {
+      "Clasyc\\SwaggerGeneratorBundle\\": ""
+    }
+  },
+  "target-dir" : "Clasyc/SwaggerGeneratorBundle",
+  "repositories" : [
+    {
+      "type": "vcs",
+      "url": "https://github.com/Clasyc/swagger-generator"
+    }
+  ],
+  "extra" : {
+    "branch-alias" : {
+      "dev-master" : "dev-master"
+    }
+  }
+}
