@@ -11,16 +11,18 @@ class Generator
     private $classes;
     private $namespace;
 
-    public function __construct($config, $kernel, DirectoryFinder $finder){
-        $this->config = $config;
+    public function __construct($config, $kernel, DirectoryFinder $finder, StringManager $sm){
+        $this->config  = $config;
         $this->kernel  = $kernel;
         $this->finder  = $finder;
+        $this->sm      = $sm;
 
         $this->bundlePath = $this->finder->findBundlesDirectory($this->kernel->getRootDir().'/../src', $this->config['bundle'])[0];
 
         $this->definitionPaths = $this->getDefinitionPaths();
         $this->controllers = $this->getControllerNames();
         $this->namespace = $this->generateNamespace();
+        dump($this->definitionPaths);
     }
 
 
@@ -59,53 +61,42 @@ class Generator
         foreach($methods as $methodName => $method){
             if($methodName != 'options'){
                 $this->addMethod($path, $methodName, $method);
-                dump($path);
             }
         }
     }
-
-
-    private function getNameFromPath($path){
-        $array = array();
-        $exploded = explode('/', $path);
-        foreach($exploded as $part){
-            $param = false;
-            (preg_match('/{(.*?)}/', $part)) ? $param = true : $param = false;
-            if(!$param){
-                if($exploded[1] != $part){
-                    $array['names'][] = $part;
-                }
-            }
-        }
-        return $array;
-    }
-
-
-    private function combineToString(array $names){
-        $joined = '';
-        foreach($names as $name){
-            $joined .= ucfirst($name);
-        }
-        return $joined;
-    }
-
-
+    
     private function addMethod($path, $name, $methodArray){
         $body = '';
-        $namesAndParams = $this->getNameFromPath($path);
+        $namesAndParams = $this->sm->getNameFromPath($path);
         $class = $this->classes[$this->getControllerName($path)];
         $method = $class
-            ->addMethod($name.$this->combineToString($namesAndParams['names'])."Action")
+            ->addMethod($name.$this->sm->combineToString($namesAndParams['names'])."Action")
             ->setVisibility('public');
 
-        foreach($methodArray['parameters'] as $parameter){
-            $this->addParameters($parameter, $method, $class, $body);
+        $method->addComment("@Route(\"".$path."\", name=\"\")");
+
+        $this->functionOnElement($methodArray, "summary", $method, "addComment");
+        $this->functionOnElement($methodArray, "description", $method, "addComment");
+
+        $method->addComment("Responses");
+        $method->addComment(json_encode($methodArray['responses'], JSON_PRETTY_PRINT));
+
+        if(isset($methodArray['parameters'])){
+            foreach($methodArray['parameters'] as $parameter){
+                $this->addParameters($parameter, $method, $body);
+            }
         }
         $method->setBody($body);
     }
 
+    private function functionOnElement($element, $key, $object, $function){
+        (!isset($element[$key])) ?: $object->$function($element[$key]."\n");
+    }
 
-    private function addParameters($parameter, $method, $class, &$body){
+
+    private function addParameters($parameter, $method, &$body){
+        if(!isset($parameter['in']) || !isset($parameter['name'])) throw new Exception("Parameter must have 'in' and 'name' keys.");
+
         switch ($parameter['in']) {
             case 'body':
                 $this->namespace
@@ -130,19 +121,24 @@ class Generator
                     ->addParameter($parameter['name']);
                 break;
         }
-        $method->addComment($this->proccedParameterComment($parameter));
+        $comment = $this->proccedCommentText($parameter);
+        $method->addComment($this->proccedCommentHeaders("param", $comment));
     }
 
 
-    private function proccedParameterComment($parameter){
-        $comment = "@Parameter(\n";
+    private function proccedCommentHeaders($header, $text){
+        return "@".$header."(\n".$text.")";
+    }
+
+
+    private function proccedCommentText(array $parameter){
+        $text = '';
         foreach($parameter as $key => $param){
             if(!is_array($param)){
-                $comment .= "   ".$key."=".$param."\n";
+                $text .= "   ".$key."=".$param."\n";
             }
         }
-        $comment .= ")";
-        return $comment;
+        return $text;
     }
 
 
@@ -164,7 +160,6 @@ class Generator
 
 
     private function generateControllerClass($name){
-
         $class = new \Nette\PhpGenerator\ClassType(ucfirst($name)."Controller");
         $class
             ->addExtend('Controller')
@@ -187,7 +182,6 @@ class Generator
     private function generateFiles(){
         foreach($this->classes as $class){
             $php_content = "<?php\n\n".(string) $this->namespace.(string) $class;
-
             file_put_contents($this->bundlePath.'/Controller/'.ucfirst($class->getName()).".php", $php_content);
         }
     }
