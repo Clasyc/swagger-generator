@@ -13,14 +13,14 @@
     "MIT"
   ],
   "require" : {
-    "nette/php-generator": "3.0"
+    "nette/php-generator": "^3.0"
   },
   "autoload" : {
     "psr-4": {
-      "Clasyc\\SwaggerGeneratorBundle\\": ""
+      "Clasyc\\Bundle\\SwaggerGeneratorBundle\\": "src"
     }
   },
-  "target-dir" : "Clasyc/SwaggerGeneratorBundle",
+  "target-dir" : "Clasyc/Bundle/SwaggerGeneratorBundle",
   "repositories" : [
     {
       "type": "vcs",

@@ -14,10 +14,8 @@ class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
-                ->arrayNode('bundles')
-                    ->prototype('scalar')
-                    ->end()
-                ->end()
+                ->scalarNode('bundle')->end()
+                ->scalarNode('definition_path')->end()
             ->end()
         ;
 

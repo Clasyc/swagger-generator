@@ -19,6 +19,6 @@ class ClasycSwaggerGeneratorExtension extends Extension
         $loader->load('services.yml');
 
         $def = $container->getDefinition('clasyc.generator');
-        $def->replaceArgument(0, $config['bundles']);
+        $def->replaceArgument(0, $config);
     }
 }
