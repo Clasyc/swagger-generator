@@ -21,6 +21,7 @@ class Generator
         $this->controllers = $this->getControllerNames();
     }
 
+
     public function generate(){
         $this->generateControllerClasses();
         $this->generateMethods();
@@ -31,10 +32,12 @@ class Generator
         }
     }
 
+
     private function getDefinitionPaths(){
         $definitionDirectory = $this->bundlePath.'/'.$this->config['definition_path'];
         return json_decode(file_get_contents($definitionDirectory), true)['paths'];
     }
+
 
     private function generateControllerClasses(){
         foreach($this->controllers as $controllerName){
@@ -42,28 +45,104 @@ class Generator
         }
     }
 
+
     private function generateMethods(){
         foreach($this->definitionPaths as $path => $array){
             $this->proccedMethods($path, $array);
         }
     }
 
+
     private function proccedMethods($path, $methods){
         foreach($methods as $methodName => $method){
             if($methodName != 'options'){
                 $this->addMethod($path, $methodName, $method);
+                dump($path);
             }
         }
     }
 
-    private function addMethod($path, $name, $method){
+
+    private function getNameFromPath($path){
+        $array = array();
+        $exploded = explode('/', $path);
+        foreach($exploded as $part){
+            $param = false;
+            (preg_match('/{(.*?)}/', $part)) ? $param = true : $param = false;
+            if(!$param){
+                if($exploded[1] != $part){
+                    $array['names'][] = $part;
+                }
+            }
+        }
+        return $array;
+    }
+
+
+    private function combineToString(array $names){
+        $joined = '';
+        foreach($names as $name){
+            $joined .= ucfirst($name);
+        }
+        return $joined;
+    }
+
+
+    private function addMethod($path, $name, $methodArray){
+        $body = '';
+        $namesAndParams = $this->getNameFromPath($path);
         $class = $this->classes[$this->getControllerName($path)];
         $method = $class
-            ->addMethod($name."Action")
+            ->addMethod($name.$this->combineToString($namesAndParams['names'])."Action")
             ->setVisibility('public');
 
-        $method->addParameter('id');
+        foreach($methodArray['parameters'] as $parameter){
+            $this->addParameters($parameter, $method, $class, $body);
+        }
+        $method->setBody($body);
     }
+
+
+    private function addParameters($parameter, $method, $class, &$body){
+        switch ($parameter['in']) {
+            case 'body':
+                $class->getNamespace()
+                    ->addUse('Symfony\Component\HttpFoundation\Request');
+                $method
+                    ->addParameter('request')
+                    ->setTypeHint('Request');
+                $body .= '$'.$parameter['name'].' = $request->request->get(\''.$parameter['name'].'\');';
+                $body .= "\n";
+                break;
+            case 'query':
+                $class->getNamespace()
+                    ->addUse('Symfony\Component\HttpFoundation\Request');
+                $method
+                    ->addParameter('request')
+                    ->setTypeHint('Request');
+                $body .= '$'.$parameter['name'].' = $request->get(\''.$parameter['name'].'\');';
+                $body .= "\n";
+                break;
+            case 'path':
+                $method
+                    ->addParameter($parameter['name']);
+                break;
+        }
+        $method->addComment($this->proccedParameterComment($parameter));
+    }
+
+
+    private function proccedParameterComment($parameter){
+        $comment = "@Parameter(\n";
+        foreach($parameter as $key => $param){
+            if(!is_array($param)){
+                $comment .= "   ".$key."=".$param."\n";
+            }
+        }
+        $comment .= ")";
+        return $comment;
+    }
+
 
     private function getControllerNames(){
         $names = array();
@@ -76,9 +155,11 @@ class Generator
         return $names;
     }
 
+
     private function getControllerName($string){
         return explode("/", $string)[1];
     }
+
 
     private function generateControllerClass($name){
         $namespaceString = str_replace('/', '\\', $this->getBundleNamespace().'/Controller');
@@ -95,6 +176,7 @@ class Generator
     private function getBundleNamespace(){
         return explode('/src/', $this->bundlePath)[1];
     }
+
 
     private function generateFiles(){
         foreach($this->classes as $class){
