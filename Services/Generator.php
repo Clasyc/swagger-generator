@@ -9,6 +9,7 @@ class Generator
     private $bundlePath;
     private $controllers;
     private $classes;
+    private $namespace;
 
     public function __construct($config, $kernel, DirectoryFinder $finder){
         $this->config = $config;
@@ -19,6 +20,7 @@ class Generator
 
         $this->definitionPaths = $this->getDefinitionPaths();
         $this->controllers = $this->getControllerNames();
+        $this->namespace = $this->generateNamespace();
     }
 
 
@@ -106,7 +108,7 @@ class Generator
     private function addParameters($parameter, $method, $class, &$body){
         switch ($parameter['in']) {
             case 'body':
-                $class->getNamespace()
+                $this->namespace
                     ->addUse('Symfony\Component\HttpFoundation\Request');
                 $method
                     ->addParameter('request')
@@ -115,7 +117,7 @@ class Generator
                 $body .= "\n";
                 break;
             case 'query':
-                $class->getNamespace()
+                $this->namespace
                     ->addUse('Symfony\Component\HttpFoundation\Request');
                 $method
                     ->addParameter('request')
@@ -162,15 +164,19 @@ class Generator
 
 
     private function generateControllerClass($name){
-        $namespaceString = str_replace('/', '\\', $this->getBundleNamespace().'/Controller');
-        $namespace = new \Nette\PhpGenerator\PhpNamespace($namespaceString);
-        $namespace->addUse('Symfony\Bundle\FrameworkBundle\Controller\Controller');
 
-        $class = $namespace->addClass(ucfirst($name)."Controller");
+        $class = new \Nette\PhpGenerator\ClassType(ucfirst($name)."Controller");
         $class
             ->addExtend('Controller')
         ;
         return $class;
+    }
+
+    private function generateNamespace(){
+        $namespaceString = str_replace('/', '\\', $this->getBundleNamespace().'/Controller');
+        $namespace = new \Nette\PhpGenerator\PhpNamespace($namespaceString);
+        $namespace->addUse('Symfony\Bundle\FrameworkBundle\Controller\Controller');
+        return $namespace;
     }
 
     private function getBundleNamespace(){
@@ -180,7 +186,7 @@ class Generator
 
     private function generateFiles(){
         foreach($this->classes as $class){
-            $php_content = "<?php\n\n".(string) $class->getNamespace();
+            $php_content = "<?php\n\n".(string) $this->namespace.(string) $class;
 
             file_put_contents($this->bundlePath.'/Controller/'.ucfirst($class->getName()).".php", $php_content);
         }
