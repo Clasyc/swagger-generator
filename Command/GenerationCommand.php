@@ -25,11 +25,11 @@ class GenerationCommand extends ContainerAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $output->writeln([
-            'Swagger generator running.'
-        ]);
-
         $generator = $this->getContainer()->get('clasyc.generator');
         $generator->generate();
+        $output->writeln([
+            'Swagger generator have finished.'
+        ]);
+
     }
 }

@@ -16,6 +16,8 @@ class Configuration implements ConfigurationInterface
             ->children()
                 ->scalarNode('bundle')->end()
                 ->scalarNode('definition_path')->end()
+                ->scalarNode('route')->end()
+                ->scalarNode('responses')->end()
             ->end()
         ;
 

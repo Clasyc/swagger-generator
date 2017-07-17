@@ -38,6 +38,20 @@ class StringManager
         return $array;
     }
 
+    public function getAllNames($path){
+        $array = array();
+        $exploded = explode('/', $path);
+        foreach($exploded as $part){
+            preg_match('/{(.*?)}/', $part, $matched);
+            (!isset($matched[1])) ? $array[] = $part : $array[] = $matched[1];
+        }
+        return $array;
+    }
+
+    public function routeToDashString($route){
+        return implode("-", $this->getAllNames($route));
+    }
+
 
     public function combineParametersToString(array $params){
         $string = '';
