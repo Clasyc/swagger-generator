@@ -11,19 +11,24 @@ class StringManager
     }
 
 
-    public function combineToString(array $names){
+    public function combineToString(array $names)
+    {
         $joined = '';
-        foreach($names as $name){
+
+        foreach ($names as $name) {
             $joined .= ucfirst($name);
         }
+
         return $joined;
     }
 
 
-    public function getNameFromPath($path){
+    public function getNameFromPath($path)
+    {
         $array = array();
         $exploded = explode('/', $path);
-        foreach($exploded as $part){
+
+        foreach ($exploded as $part) {
             preg_match('/{(.*?)}/', $part, $matched);
 
             if(!isset($matched[1])){
@@ -32,16 +37,20 @@ class StringManager
                 $array['params'][] = $matched[1];
             }
         }
-        if(isset($array['params'])){
+
+        if (isset($array['params'])) {
             $array['names'][] = $this->combineParametersToString($array['params']);
         }
+
         return $array;
     }
 
-    public function getAllNames($path){
+    public function getAllNames($path)
+    {
         $array = array();
         $exploded = explode('/', $path);
-        foreach($exploded as $part){
+
+        foreach ($exploded as $part) {
             preg_match('/{(.*?)}/', $part, $matched);
             (!isset($matched[1])) ? $array[] = $part : $array[] = $matched[1];
         }
@@ -53,14 +62,17 @@ class StringManager
     }
 
 
-    public function combineParametersToString(array $params){
+    public function combineParametersToString(array $params)
+    {
         $string = '';
         $size = count($params);
-        for($i = 0; $i < $size; $i++){
+
+        for ($i = 0; $i < $size; $i++) {
             ($i == 0) ? $by = "By" : $by = "";
             ($i == ($size-1)) ? $and = "" : $and = "And";
             $string .= $by.ucfirst($params[$i]).$and;
         }
+
         return $string;
     }
 }

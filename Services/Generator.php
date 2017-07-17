@@ -4,7 +4,6 @@ namespace Clasyc\Bundle\SwaggerGeneratorBundle\Services;
 
 use Symfony\Component\Security\Acl\Exception\Exception;
 use Clasyc\Bundle\SwaggerGeneratorBundle\libs\YmlGenerator\YmlGenerator;
-use Symfony\Component\Yaml\Yaml;
 
 class Generator
 {
@@ -15,6 +14,8 @@ class Generator
     private $yamlGenerator;
     private $controllerPrefix = "Controller";
     private $actionPrefix = "Action";
+    private $configDir = "/Resources/config";
+    private $routingFileDir = "/routing.yml";
 
     private $use = [
         'Controller' => 'Symfony\Bundle\FrameworkBundle\Controller\Controller',
@@ -83,6 +84,7 @@ class Generator
         }
     }
 
+
     private function addRouteAnnotation($method, $path, $name = ''){
         $method->addComment("@Route(\"".$path."\", name=\"".$name.$this->sm->routeToDashString($path)."\")");
     }
@@ -114,7 +116,7 @@ class Generator
         if ($this->config['route'] == 'annotation') {
             $this->namespace->addUse($this->use["Route"]);
             $this->addRouteAnnotation($method, $path, $name);
-        } else if($this->config['route'] == 'yml') {
+        } else if ($this->config['route'] == 'yml') {
             $this->addYamlRoute($name.$this->sm->combineToString($namesAndParams['names']), $path, $name);
         }
 
@@ -126,11 +128,12 @@ class Generator
             $this->functionOnElement($data, "responses", $method, "addComment", ["json_encode", JSON_PRETTY_PRINT]);
         }
 
+        if (isset($data['parameters'])) {
 
-        if(isset($data['parameters'])){
             foreach($data['parameters'] as $parameter){
                 $this->addParameters($parameter, $method, $body);
             }
+
         }
         $method->setBody($body);
     }
@@ -151,6 +154,7 @@ class Generator
         $name = $parameter['name'];
 
         switch ($parameter['in']) {
+            case 'formData':
             case 'body':
                 $text = '$'.$name.' = $request->request->get(\''.$name.'\');';
                 $this->addParameter($method, $body, $text);
@@ -245,11 +249,11 @@ class Generator
     {
         if ($this->config['route'] == 'yml') {
 
-            if (!file_exists($this->bundlePath.'/Resources/config')) {
-                mkdir($this->bundlePath.'/Resources/config', 0777, true);
+            if (!file_exists($this->bundlePath.$this->configDir)) {
+                mkdir($this->bundlePath.$this->configDir, 0777, true);
             }
 
-            file_put_contents($this->bundlePath.'/Resources/config/routing.yml', $this->yamlGenerator->getOutput());
+            file_put_contents($this->bundlePath.$this->configDir.$this->routingFileDir, $this->yamlGenerator->getOutput());
         }
         foreach($this->classes as $class){
             $php_content = "<?php\n\n".(string) $this->namespace.(string) $class;
